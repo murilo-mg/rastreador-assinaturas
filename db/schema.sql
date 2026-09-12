@@ -1,0 +1,9 @@
+CREATE TABLE IF NOT EXISTS assinaturas (
+    id SERIAL PRIMARY KEY,
+    nome VARCHAR(100) NOT NULL,
+    valor NUMERIC(10, 2) NOT NULL,
+    categoria VARCHAR(50),
+    dia_cobranca INTEGER NOT NULL CHECK (dia_cobranca BETWEEN 1 AND 31),
+    ativa BOOLEAN NOT NULL DEFAULT TRUE,
+    criado_em TIMESTAMP NOT NULL DEFAULT NOW()
+);
