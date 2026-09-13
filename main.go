@@ -1,11 +1,12 @@
 // Ponto de entrada da aplicação.
-// Nesta etapa apenas conecta ao banco e sobe um servidor com rota de saúde.
+// Conecta ao banco e registra as rotas de assinaturas.
 package main
 
 import (
 	"log"
 	"net/http"
 
+	"rastreador-assinaturas/internal/assinatura"
 	"rastreador-assinaturas/internal/database"
 )
 
@@ -18,12 +19,17 @@ func main() {
 
 	log.Println("conexão com o banco estabelecida com sucesso")
 
-	http.HandleFunc("/saude", func(w http.ResponseWriter, r *http.Request) {
+	mux := http.NewServeMux()
+	mux.HandleFunc("/saude", func(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte("ok"))
 	})
 
+	repositorioAssinatura := assinatura.NovoRepositorio(banco)
+	handlerAssinatura := assinatura.NovoHandler(repositorioAssinatura)
+	handlerAssinatura.RegistrarRotas(mux)
+
 	log.Println("servidor rodando na porta 8080")
-	if err := http.ListenAndServe(":8080", nil); err != nil {
+	if err := http.ListenAndServe(":8080", mux); err != nil {
 		log.Fatalf("erro ao iniciar servidor: %v", err)
 	}
 }
