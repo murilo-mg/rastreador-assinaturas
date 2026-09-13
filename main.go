@@ -1,5 +1,5 @@
 // Ponto de entrada da aplicação.
-// Conecta ao banco e registra as rotas de assinaturas.
+// Conecta ao banco e registra as rotas de assinaturas e relatórios.
 package main
 
 import (
@@ -8,6 +8,7 @@ import (
 
 	"rastreador-assinaturas/internal/assinatura"
 	"rastreador-assinaturas/internal/database"
+	"rastreador-assinaturas/internal/relatorio"
 )
 
 func main() {
@@ -27,6 +28,10 @@ func main() {
 	repositorioAssinatura := assinatura.NovoRepositorio(banco)
 	handlerAssinatura := assinatura.NovoHandler(repositorioAssinatura)
 	handlerAssinatura.RegistrarRotas(mux)
+
+	repositorioRelatorio := relatorio.NovoRepositorio(banco)
+	handlerRelatorio := relatorio.NovoHandler(repositorioRelatorio)
+	handlerRelatorio.RegistrarRotas(mux)
 
 	log.Println("servidor rodando na porta 8080")
 	if err := http.ListenAndServe(":8080", mux); err != nil {
