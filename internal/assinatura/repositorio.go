@@ -49,6 +49,10 @@ func (r *Repositorio) Listar() ([]Assinatura, error) {
 		assinaturas = append(assinaturas, a)
 	}
 
+	if err := linhas.Err(); err != nil {
+		return nil, fmt.Errorf("erro ao iterar resultados: %w", err)
+	}
+
 	return assinaturas, nil
 }
 
