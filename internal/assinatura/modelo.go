@@ -2,10 +2,10 @@
 package assinatura
 
 type Assinatura struct {
-	ID           int
-	Nome         string
-	Valor        float64
-	Categoria    string
-	DiaCobranca  int
-	Ativa        bool
+	ID          int     `json:"id"`
+	Nome        string  `json:"nome"`
+	Valor       float64 `json:"valor"`
+	Categoria   string  `json:"categoria"`
+	DiaCobranca int     `json:"dia_cobranca"`
+	Ativa       bool    `json:"ativa"`
 }
