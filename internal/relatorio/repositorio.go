@@ -31,6 +31,23 @@ func (r *Repositorio) GastoMensalTotal() (GastoMensal, error) {
 	return GastoMensal{Total: total}, nil
 }
 
+type ProjecaoAnual struct {
+	GastoMensal float64
+	GastoAnual  float64
+}
+
+func (r *Repositorio) ProjecaoAnual() (ProjecaoAnual, error) {
+	gastoMensal, err := r.GastoMensalTotal()
+	if err != nil {
+		return ProjecaoAnual{}, fmt.Errorf("erro ao calcular projeção anual: %w", err)
+	}
+
+	return ProjecaoAnual{
+		GastoMensal: gastoMensal.Total,
+		GastoAnual:  gastoMensal.Total * 12,
+	}, nil
+}
+
 type ProximoVencimento struct {
 	ID          int
 	Nome        string

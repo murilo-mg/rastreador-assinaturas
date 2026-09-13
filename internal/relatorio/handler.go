@@ -20,6 +20,7 @@ func NovoHandler(repositorio *Repositorio) *Handler {
 func (h *Handler) RegistrarRotas(mux *http.ServeMux) {
 	mux.HandleFunc("/relatorios/gasto-mensal", h.gastoMensal)
 	mux.HandleFunc("/relatorios/proximos-vencimentos", h.proximosVencimentos)
+	mux.HandleFunc("/relatorios/projecao-anual", h.projecaoAnual)
 }
 
 func (h *Handler) gastoMensal(w http.ResponseWriter, r *http.Request) {
@@ -36,6 +37,22 @@ func (h *Handler) gastoMensal(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(gasto)
+}
+
+func (h *Handler) projecaoAnual(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		http.Error(w, "método não permitido", http.StatusMethodNotAllowed)
+		return
+	}
+
+	projecao, err := h.repositorio.ProjecaoAnual()
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(projecao)
 }
 
 func (h *Handler) proximosVencimentos(w http.ResponseWriter, r *http.Request) {

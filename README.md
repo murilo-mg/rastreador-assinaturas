@@ -1,34 +1,36 @@
 # Rastreador de Assinaturas
 
-API em Go pra acompanhar assinaturas e gastos recorrentes — streaming, academia, qualquer serviço cobrado periodicamente. A ideia é saber quanto está sendo gasto por mês, o que vence em breve, e ter uma projeção de gasto anual.
-
-## Status
-
-Em construção. Por enquanto só a conexão com o banco e uma rota de saúde estão prontas.
+API em Go pra acompanhar assinaturas e gastos recorrentes — streaming, academia, qualquer serviço cobrado periodicamente. Cadastra o que você paga, e a API calcula quanto está sendo gasto por mês, o que vence em breve, e uma projeção de gasto anual.
 
 ## Stack
 
 - Go
 - PostgreSQL
+- Docker
 
 ## Como rodar
 
-Precisa de um PostgreSQL rodando e do banco criado com o schema em `db/schema.sql`.
-
-Configure as variáveis de ambiente (ou use os valores padrão, feitos pra desenvolvimento local):
+Com Docker instalado, dentro da pasta do projeto:
 
 \`\`\`bash
-export DB_HOST=localhost
-export DB_PORT=5432
-export DB_USER=postgres
-export DB_PASSWORD=postgres
-export DB_NAME=rastreador_assinaturas
+docker compose up --build
 \`\`\`
 
-Depois:
+Isso sobe o banco já com o schema aplicado e a API na porta 8080.
+
+## Endpoints
+
+- `POST /assinaturas` — cadastra uma assinatura
+- `GET /assinaturas` — lista todas
+- `DELETE /assinaturas/{id}` — remove uma assinatura
+- `GET /relatorios/gasto-mensal` — soma o valor de todas as assinaturas ativas
+- `GET /relatorios/proximos-vencimentos?dias=7` — lista o que vence nos próximos N dias (padrão: 7)
+- `GET /relatorios/projecao-anual` — projeta o gasto anual com base no gasto mensal atual
+
+## Exemplo de cadastro
 
 \`\`\`bash
-go run main.go
+curl -X POST http://localhost:8080/assinaturas \\
+  -H "Content-Type: application/json" \\
+  -d '{"nome":"Netflix","valor":39.90,"categoria":"streaming","dia_cobranca":10,"ativa":true}'
 \`\`\`
-
-O servidor sobe na porta 8080.
