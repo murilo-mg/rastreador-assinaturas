@@ -38,6 +38,7 @@ func NovoHandler(repositorio Armazenamento) *Handler { return &Handler{repositor
 
 func (h *Handler) RegistrarRotas(mux *http.ServeMux) {
 	mux.HandleFunc("/assinaturas", h.roteirarPorMetodo)
+	mux.HandleFunc("/assinaturas/exportar.csv", h.exportarCSV)
 	mux.HandleFunc("/assinaturas/", h.roteirarRegistro)
 }
 

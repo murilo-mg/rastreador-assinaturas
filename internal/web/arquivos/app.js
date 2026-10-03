@@ -26,7 +26,7 @@ function mensagem(texto, erro = false) {
   no.hidden = !texto;
 }
 
-async function requisicao(caminho, opcoes = {}, sinal) {
+async function receberResposta(caminho, opcoes = {}, sinal) {
   let resposta;
   try {
     resposta = await fetch(caminho, { ...opcoes, signal: sinal ?? AbortSignal.timeout(10000) });
@@ -39,7 +39,27 @@ async function requisicao(caminho, opcoes = {}, sinal) {
     try { texto = (await resposta.json()).erro || texto; } catch { /* Resposta sem JSON. */ }
     throw new Error(texto);
   }
+  return resposta;
+}
+
+async function requisicao(caminho, opcoes = {}, sinal) {
+  const resposta = await receberResposta(caminho, opcoes, sinal);
   return resposta.status === 204 ? null : resposta.json();
+}
+
+async function exportarCSV() {
+  const botao = el('#exportar-csv');
+  if (botao.disabled) return;
+  botao.disabled = true; botao.textContent = 'Exportando…';
+  try {
+    const resposta = await receberResposta('/assinaturas/exportar.csv');
+    const url = URL.createObjectURL(await resposta.blob());
+    const link = elemento('a'); link.href = url; link.download = 'assinaturas.csv'; link.hidden = true;
+    document.body.append(link); link.click(); link.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 30000);
+    mensagem('CSV preparado para download com todas as assinaturas, ativas e inativas.');
+  } catch (erro) { mensagem(erro.message, true);
+  } finally { botao.disabled = false; botao.textContent = 'Exportar CSV'; }
 }
 
 async function atualizar() {
@@ -289,6 +309,7 @@ el('#dialogo-cadastro').addEventListener('cancel', evento => { if (cadastroOcupa
 el('#cancelar-remover').addEventListener('click', () => el('#dialogo-remover').close());
 el('#dialogo-remover').addEventListener('cancel', evento => { if (removendo) evento.preventDefault(); });
 el('#atualizar').addEventListener('click', () => { mensagem(''); atualizar(); });
+el('#exportar-csv').addEventListener('click', exportarCSV);
 el('#dias').addEventListener('change', () => { mensagem(''); atualizar(); });
 el('#busca').addEventListener('input', renderizarLista);
 for (const id of ['#categoria-filtro', '#ordem']) el(id).addEventListener('change', renderizarLista);

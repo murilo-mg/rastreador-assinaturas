@@ -28,12 +28,13 @@
     </section>
     <div class="colunas">
       <section id="assinaturas" class="painel lista-painel" aria-labelledby="titulo-lista" tabindex="-1">
-        <div class="titulo-painel"><div><h2 id="titulo-lista">Suas assinaturas</h2><p id="contagem">Carregando…</p></div><button id="atualizar" class="botao discreto" type="button">↻ Atualizar</button></div>
+        <div class="titulo-painel titulo-lista"><div><h2 id="titulo-lista">Suas assinaturas</h2><p id="contagem">Carregando…</p></div><div class="acoes-painel"><button id="exportar-csv" class="botao discreto" type="button" aria-describedby="nota-exportacao">Exportar CSV</button><button id="atualizar" class="botao discreto" type="button">↻ Atualizar</button></div></div>
         <div class="filtros">
           <div class="campo busca"><label for="busca">Buscar</label><input id="busca" type="search" placeholder="Nome da assinatura" maxlength="100"></div>
           <div class="campo"><label for="categoria-filtro">Categoria</label><select id="categoria-filtro"><option value="">Todas</option></select></div>
           <div class="campo"><label for="ordem">Ordenar por</label><select id="ordem"><option value="nome">Nome</option><option value="valor">Maior valor</option><option value="dia">Dia da cobrança</option></select></div>
         </div>
+        <p id="nota-exportacao" class="nota-exportacao">O CSV inclui todas as assinaturas, ativas e inativas.</p>
         <div id="lista" aria-busy="true"><p class="estado-vazio">Buscando assinaturas…</p></div>
       </section>
       <aside class="lateral">
