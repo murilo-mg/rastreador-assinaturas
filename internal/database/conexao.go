@@ -2,9 +2,11 @@
 package database
 
 import (
+	"context"
 	"database/sql"
 	"fmt"
 	"os"
+	"time"
 
 	_ "github.com/lib/pq"
 )
@@ -17,7 +19,13 @@ func Conectar() (*sql.DB, error) {
 		return nil, fmt.Errorf("erro ao abrir conexão com o banco: %w", err)
 	}
 
-	if err := banco.Ping(); err != nil {
+	banco.SetMaxOpenConns(5)
+	banco.SetMaxIdleConns(5)
+	banco.SetConnMaxLifetime(30 * time.Minute)
+	ctx, cancelar := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancelar()
+	if err := banco.PingContext(ctx); err != nil {
+		banco.Close()
 		return nil, fmt.Errorf("erro ao testar conexão com o banco: %w", err)
 	}
 

@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light">
+  <title>Rastreador de Assinaturas</title>
+  <link rel="icon" href="/assets/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/assets/app.css">
+  <script src="/assets/app.js" defer></script>
+</head>
+<body>
+  <a class="pular" href="#assinaturas">Pular para assinaturas</a>
+  <header class="cabecalho">
+    <a class="marca" href="/" aria-label="Rastreador, página inicial"><span class="simbolo" aria-hidden="true">↻</span> rastreador<span class="marca-sub">/ assinaturas</span></a>
+    <span class="etiqueta">Controle pessoal</span>
+  </header>
+  <main>
+    <section class="introducao" aria-labelledby="titulo">
+      <div><p class="sobretitulo">Um lugar para acompanhar o que se repete</p><h1 id="titulo">Pequenos gastos.<br>Uma visão completa.</h1><p class="subtitulo">Assinaturas mensais, próximas cobranças e quanto tudo soma ao longo do ano.</p></div>
+      <button id="abrir-cadastro" class="botao primario" type="button"><span aria-hidden="true">+</span> Nova assinatura</button>
+    </section>
+    <p id="mensagem" class="mensagem" role="status" aria-live="polite" hidden></p>
+    <section class="resumo" aria-label="Resumo das assinaturas ativas" aria-busy="true">
+      <article class="cartao destaque"><span class="rotulo">Gasto mensal</span><strong id="gasto-mensal">—</strong><span class="nota">Soma das assinaturas ativas</span><span class="decoracao" aria-hidden="true">↗</span></article>
+      <article class="cartao"><span class="rotulo">Projeção anual</span><strong id="gasto-anual">—</strong><span class="nota">12 meses com os valores atuais</span></article>
+      <article class="cartao"><span class="rotulo">Assinaturas ativas</span><strong id="quantidade">—</strong><span id="nota-quantidade" class="nota">Carregando seu resumo…</span></article>
+    </section>
+    <div class="colunas">
+      <section id="assinaturas" class="painel lista-painel" aria-labelledby="titulo-lista" tabindex="-1">
+        <div class="titulo-painel"><div><h2 id="titulo-lista">Suas assinaturas</h2><p id="contagem">Carregando…</p></div><button id="atualizar" class="botao discreto" type="button">↻ Atualizar</button></div>
+        <div class="filtros">
+          <div class="campo busca"><label for="busca">Buscar</label><input id="busca" type="search" placeholder="Nome da assinatura" maxlength="100"></div>
+          <div class="campo"><label for="categoria-filtro">Categoria</label><select id="categoria-filtro"><option value="">Todas</option></select></div>
+          <div class="campo"><label for="ordem">Ordenar por</label><select id="ordem"><option value="nome">Nome</option><option value="valor">Maior valor</option><option value="dia">Dia da cobrança</option></select></div>
+        </div>
+        <div id="lista" aria-busy="true"><p class="estado-vazio">Buscando assinaturas…</p></div>
+      </section>
+      <aside class="lateral">
+        <section class="painel" aria-labelledby="titulo-vencimentos">
+          <div class="titulo-painel"><div><h2 id="titulo-vencimentos">Próximas cobranças</h2><p>Hoje e os próximos dias</p></div></div>
+          <div class="campo janela"><label for="dias">Período</label><select id="dias"><option value="7">Próximos 7 dias</option><option value="15">Próximos 15 dias</option><option value="30">Próximos 30 dias</option></select></div>
+          <ul id="vencimentos" class="vencimentos"><li class="estado-vazio">Carregando…</li></ul>
+        </section>
+        <section class="painel" aria-labelledby="titulo-categorias"><div class="titulo-painel"><div><h2 id="titulo-categorias">Para onde vai o gasto</h2><p>Distribuição mensal por categoria</p></div></div><div id="categorias"><p class="estado-vazio">Carregando…</p></div></section>
+      </aside>
+    </div>
+    <footer><span>Valores em reais · cobranças mensais</span><span>A projeção considera os valores atuais, sem reajustes.</span></footer>
+  </main>
+  <dialog id="dialogo-cadastro" aria-labelledby="titulo-cadastro">
+    <form id="formulario">
+      <div class="titulo-painel"><div><p class="sobretitulo">Organize seu mês</p><h2 id="titulo-cadastro">Nova assinatura</h2></div><button class="fechar" type="button" id="fechar-cadastro" aria-label="Fechar cadastro">×</button></div>
+      <div class="campo"><label for="nome">Nome</label><input id="nome" name="nome" required maxlength="100" autocomplete="off" placeholder="Ex.: Academia"></div>
+      <div class="linha-formulario"><div class="campo"><label for="valor">Valor mensal (R$)</label><input id="valor" name="valor" required type="number" min="0" max="99999999.99" step="0.01" inputmode="decimal" placeholder="0,00"></div><div class="campo"><label for="dia-cobranca">Dia da cobrança</label><input id="dia-cobranca" name="dia_cobranca" required type="number" min="1" max="31" step="1" placeholder="1 a 31"></div></div>
+      <div class="campo"><label for="categoria">Categoria <span class="opcional">(opcional)</span></label><input id="categoria" name="categoria" maxlength="50" list="sugestoes-categorias" placeholder="Ex.: Saúde"><datalist id="sugestoes-categorias"><option value="Streaming"><option value="Saúde"><option value="Educação"><option value="Trabalho"><option value="Outros"></datalist></div>
+      <label class="checkbox"><input id="ativa" type="checkbox" checked> Assinatura ativa</label>
+      <p class="ajuda">Nos meses sem o dia escolhido, a cobrança fica no último dia do mês.</p>
+      <p id="erro-cadastro" class="erro-formulario" role="alert" hidden></p>
+      <div class="acoes-formulario"><button class="botao discreto" type="button" id="cancelar-cadastro">Cancelar</button><button class="botao primario" type="submit" id="salvar">Salvar assinatura</button></div>
+    </form>
+  </dialog>
+  <dialog id="dialogo-remover" aria-labelledby="titulo-remover"><form id="formulario-remover"><h2 id="titulo-remover">Remover assinatura?</h2><p id="texto-remover"></p><p class="ajuda">O registro será excluído do banco. Essa ação não cancela a cobrança no serviço contratado.</p><p id="erro-remover" class="erro-formulario" role="alert" hidden></p><div class="acoes-formulario"><button id="cancelar-remover" class="botao discreto" type="button">Manter assinatura</button><button id="confirmar-remover" class="botao perigo" type="submit">Remover</button></div></form></dialog>
+</body>
+</html>

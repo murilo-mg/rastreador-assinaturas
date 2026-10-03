@@ -1,16 +1,14 @@
-FROM golang:1.22-alpine AS build
+FROM golang:1.27-alpine AS build
 
 WORKDIR /app
 COPY go.mod go.sum ./
 RUN go mod download
-
 COPY . .
-RUN go build -o servidor .
+RUN CGO_ENABLED=0 go build -trimpath -o /servidor .
 
-FROM alpine:latest
-
-WORKDIR /app
-COPY --from=build /app/servidor .
-
+FROM scratch
+COPY --from=build /servidor /servidor
+USER 65532:65532
+ENV SERVER_ADDR=:8080 TZ=America/Manaus
 EXPOSE 8080
-CMD ["./servidor"]
+ENTRYPOINT ["/servidor"]
