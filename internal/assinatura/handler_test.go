@@ -17,9 +17,14 @@ type memoria struct {
 	alteracoes int
 	estados    int
 	ativa      bool
+	lista      []Assinatura
+	listagens  int
 }
 
-func (m *memoria) Listar(context.Context) ([]Assinatura, error) { return nil, m.erro }
+func (m *memoria) Listar(context.Context) ([]Assinatura, error) {
+	m.listagens++
+	return m.lista, m.erro
+}
 func (m *memoria) Criar(_ context.Context, a Assinatura) (int, error) {
 	m.criada = a
 	m.criacoes++

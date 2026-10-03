@@ -1,6 +1,6 @@
 # Validação do painel e da API
 
-Revisão de 3 de outubro de 2026, preparada sobre a `main` em `7b8f58b`, incluindo edição e ativação/desativação.
+Revisão de 3 de outubro de 2026, preparada sobre a `main` em `1999cca`, incluindo exportação em CSV.
 
 ## Código e testes
 
@@ -14,6 +14,14 @@ Revisão de 3 de outubro de 2026, preparada sobre a `main` em `7b8f58b`, incluin
 - Ativação/desativação sem alterar os outros campos, repetição do mesmo estado
   e atualização dos totais, da projeção e dos vencimentos.
 - Edição exige `ativa` explícita; a mudança de estado aceita somente um booleano.
+- Exportação CSV com BOM UTF-8, seis colunas, vírgula decimal, duas casas,
+  acentos, aspas, ponto e vírgula, quebras de linha e registros inativos.
+- Cabeçalho em lista vazia, método GET, nome de download, ausência de cache
+  e falha do banco retornando JSON sem iniciar um arquivo parcial.
+- Prefixos de fórmula em nomes e categorias, incluindo variantes Unicode
+  e caracteres invisíveis iniciais, tratados na exportação sem alterar o banco.
+- CSV gerado a partir dos registros reais da integração, após edição e
+  mudança de estado, com os cabeçalhos de proteção do servidor.
 - Vencimentos: virada de mês e ano, fevereiro, ano bissexto, dias 29 a 31,
   inclusão de hoje e do último dia do período e ordenação cronológica.
 - JSON inválido, campos obrigatórios, campos desconhecidos, corpo acima de
@@ -40,6 +48,10 @@ Verificada em Chromium 154, com a aplicação Go e o banco de revisão:
 - Largura de 390 px, sem transbordamento horizontal, e fechamento por Escape.
 - Recursos do aplicativo na mesma origem, sem erros de JavaScript ou
   violações de CSP nos fluxos normais.
+- Download de CSV vazio e preenchido: bytes idênticos à resposta da API,
+  nome do arquivo, BOM, valores e inclusão de todas as assinaturas com filtros ativos.
+- Exportação de inativas e nomes com prefixo de fórmula, download no celular,
+  falha de conexão sem baixar um arquivo de erro e nova tentativa bem-sucedida.
 
 As capturas de `imagens/` usam dados fictícios. Incluem o formulário de edição
 e as ações na lista. Login não faz parte desta versão.
@@ -48,8 +60,13 @@ e as ações na lista. Login não faz parte desta versão.
 
 Não foi possível executar Docker neste ambiente. O workflow prepara PostgreSQL
 16 nativo e verifica o build da imagem no GitHub Actions. A versão anterior
-(`7b8f58b`) passou nessas etapas no [run 37155637317](https://github.com/murilo-mg/rastreador-assinaturas/actions/runs/37155637317).
+(`1999cca`) passou nessas etapas no [run 37157419204](https://github.com/murilo-mg/rastreador-assinaturas/actions/runs/37157419204).
 O resultado das alterações desta revisão deve ser conferido no novo PR antes do merge.
+
+O conteúdo e o download do CSV foram conferidos; Excel e LibreOffice não
+foram executados neste ambiente. O formato UTF-8/BOM segue a documentação
+da Microsoft e o tratamento de fórmulas segue a OWASP, com as referências
+e o escopo descritos no README.
 
 O detector de condições de corrida e os testes verificam comportamentos
 específicos. Esta revisão não equivale a uma auditoria completa de segurança.

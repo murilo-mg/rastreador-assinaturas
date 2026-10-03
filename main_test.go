@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"database/sql"
+	"encoding/csv"
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
@@ -203,6 +204,19 @@ func TestAPIComBanco(t *testing.T) {
 	}
 	if listar()[0].Nome != "Editada" {
 		t.Fatal("edição inválida mudou o banco")
+	}
+	w = enviar("GET", "/assinaturas/exportar.csv", "")
+	leitorCSV := csv.NewReader(strings.NewReader(strings.TrimPrefix(w.Body.String(), "\uFEFF")))
+	leitorCSV.Comma = ';'
+	linhasCSV, err := leitorCSV.ReadAll()
+	if err != nil || w.Code != 200 || len(linhasCSV) != 4 {
+		t.Fatalf("exportação com banco: %d %v %#v", w.Code, err, linhasCSV)
+	}
+	if linhasCSV[1][0] != "1" || linhasCSV[1][1] != "Editada" || linhasCSV[1][2] != "4,40" || linhasCSV[1][4] != "31" || linhasCSV[1][5] != "Não" || linhasCSV[2][1] != "Inativa" || linhasCSV[3][5] != "Sim" {
+		t.Fatalf("CSV não refletiu os registros atuais: %#v", linhasCSV)
+	}
+	if w.Header().Get("X-Content-Type-Options") != "nosniff" || w.Header().Get("Cache-Control") != "no-store" {
+		t.Fatal("proteções ausentes no download")
 	}
 	if w := enviar("DELETE", "/assinaturas/1", ""); w.Code != 204 {
 		t.Fatalf("remoção: %s", w.Body.String())
