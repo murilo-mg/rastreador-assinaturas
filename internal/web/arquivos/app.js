@@ -9,6 +9,8 @@ let controlador = null;
 let cadastroOcupado = false;
 let removendo = false;
 let assinaturaRemover = null;
+let assinaturaEditar = null;
+let alterandoEstado = false;
 
 function elemento(tag, texto, classe) {
   const no = document.createElement(tag);
@@ -124,7 +126,7 @@ function renderizarLista() {
   }
   const tabela = elemento('table', undefined, 'tabela');
   const cabecalho = elemento('thead'); const linha = elemento('tr');
-  for (const titulo of ['Assinatura', 'Valor / mês', 'Categoria', 'Cobrança', 'Ação']) {
+  for (const titulo of ['Assinatura', 'Valor / mês', 'Categoria', 'Cobrança', 'Ações']) {
     const th = elemento('th', titulo); th.scope = 'col'; linha.append(th);
   }
   cabecalho.append(linha); const corpo = elemento('tbody');
@@ -134,8 +136,18 @@ function renderizarLista() {
     const avatar = elemento('span', [...a.nome][0]?.toLocaleUpperCase('pt-BR') || '•', 'avatar'); avatar.setAttribute('aria-hidden', 'true');
     const descricao = elemento('div'); descricao.append(elemento('strong', a.nome), elemento('small', a.ativa ? 'Ativa' : 'Inativa'));
     servico.append(avatar, descricao); nome.append(servico);
-    const acao = elemento('td'); const remover = elemento('button', 'Remover', 'remover'); remover.type = 'button';
-    remover.setAttribute('aria-label', 'Remover ' + a.nome); remover.addEventListener('click', () => abrirRemocao(a)); acao.append(remover);
+    const acao = elemento('td'); const grupo = elemento('div', undefined, 'acoes-registro');
+    for (const [texto, classe, executar] of [
+      ['Editar', 'acao-registro', () => abrirEdicao(a)],
+      [a.ativa ? 'Desativar' : 'Ativar', 'acao-registro', () => mudarEstado(a)],
+      ['Remover', 'remover', () => abrirRemocao(a)],
+    ]) {
+      const botao = elemento('button', texto, classe); botao.type = 'button';
+      botao.setAttribute('aria-label', texto + ' ' + a.nome); botao.disabled = alterandoEstado;
+      botao.dataset.id = a.id; botao.dataset.acao = texto === 'Editar' ? 'editar' : texto === 'Remover' ? 'remover' : 'estado';
+      botao.addEventListener('click', executar); grupo.append(botao);
+    }
+    acao.append(grupo);
     tr.append(nome, elemento('td', reais.format(a.valor), 'valor'), elemento('td', categoria(a), 'categoria'), elemento('td', 'Dia ' + a.dia_cobranca, 'dia'), acao); corpo.append(tr);
   }
   tabela.append(cabecalho, corpo); el('#lista').replaceChildren(tabela);
@@ -172,31 +184,74 @@ function renderizarCategorias() {
 }
 
 function abrirCadastro() {
+  if (alterandoEstado || cadastroOcupado) return;
+  assinaturaEditar = null; el('#formulario').reset();
+  el('#titulo-cadastro').textContent = 'Nova assinatura'; el('#salvar').textContent = 'Salvar assinatura';
   el('#erro-cadastro').hidden = true; el('#dialogo-cadastro').showModal();
+}
+
+function abrirEdicao(a) {
+  if (alterandoEstado || cadastroOcupado) return;
+  assinaturaEditar = a;
+  el('#nome').value = a.nome; el('#valor').value = a.valor; el('#categoria').value = a.categoria;
+  el('#dia-cobranca').value = a.dia_cobranca; el('#ativa').checked = a.ativa;
+  el('#titulo-cadastro').textContent = 'Editar assinatura'; el('#salvar').textContent = 'Salvar alterações';
+  el('#erro-cadastro').hidden = true; el('#dialogo-cadastro').showModal(); el('#nome').focus();
+}
+
+function focarAcao(id, acao) {
+  const botao = el(`[data-id="${id}"][data-acao="${acao}"]`);
+  (botao || el('#assinaturas')).focus({ preventScroll: true });
+}
+
+async function mudarEstado(a) {
+  if (alterandoEstado || cadastroOcupado || removendo) return;
+  alterandoEstado = true;
+  el('#abrir-cadastro').disabled = true;
+  renderizarLista();
+  const ativa = !a.ativa;
+  try {
+    await requisicao('/assinaturas/' + a.id, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ativa }) });
+    a.ativa = ativa;
+    mensagem(ativa ? 'Assinatura ativada. Incluída nos cálculos e nas próximas cobranças.' : 'Assinatura desativada. O registro continua salvo, fora dos cálculos e das próximas cobranças.');
+    await atualizar();
+  } catch (erro) { mensagem(erro.message, true);
+  } finally {
+    alterandoEstado = false; el('#abrir-cadastro').disabled = false;
+    renderizarLista(); focarAcao(a.id, 'estado');
+  }
 }
 
 function ocuparCadastro(ocupado) {
   cadastroOcupado = ocupado;
   for (const id of ['#salvar', '#fechar-cadastro', '#cancelar-cadastro']) el(id).disabled = ocupado;
-  el('#salvar').textContent = ocupado ? 'Salvando…' : 'Salvar assinatura';
+  for (const campo of el('#formulario').querySelectorAll('input')) campo.disabled = ocupado;
+  el('#salvar').textContent = ocupado ? 'Salvando…' : assinaturaEditar ? 'Salvar alterações' : 'Salvar assinatura';
   el('#formulario').setAttribute('aria-busy', String(ocupado));
 }
 
 el('#formulario').addEventListener('submit', async evento => {
   evento.preventDefault(); if (cadastroOcupado) return;
   ocuparCadastro(true); el('#erro-cadastro').hidden = true;
+  const id = assinaturaEditar?.id;
+  const entrada = {
+    nome: el('#nome').value.trim(), valor: Number(el('#valor').value), categoria: el('#categoria').value.trim(),
+    dia_cobranca: Number(el('#dia-cobranca').value), ativa: el('#ativa').checked,
+  };
   try {
-    await requisicao('/assinaturas', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({
-      nome: el('#nome').value.trim(), valor: Number(el('#valor').value), categoria: el('#categoria').value.trim(),
-      dia_cobranca: Number(el('#dia-cobranca').value), ativa: el('#ativa').checked,
-    }) });
-    el('#formulario').reset(); el('#dialogo-cadastro').close(); mensagem('Assinatura salva.');
+    await requisicao(id ? '/assinaturas/' + id : '/assinaturas', {
+      method: id ? 'PUT' : 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(entrada),
+    });
+    if (assinaturaEditar) Object.assign(assinaturaEditar, entrada);
+    el('#formulario').reset(); el('#dialogo-cadastro').close(); mensagem(id ? 'Alterações salvas.' : 'Assinatura salva.');
     await atualizar();
+    if (id) focarAcao(id, 'editar');
   } catch (erro) { el('#erro-cadastro').textContent = erro.message; el('#erro-cadastro').hidden = false;
   } finally { ocuparCadastro(false); }
 });
 
 function abrirRemocao(a) {
+  if (alterandoEstado || removendo) return;
   assinaturaRemover = a; el('#texto-remover').textContent = `Você vai remover “${a.nome}”, de ${reais.format(a.valor)} por mês.`;
   el('#erro-remover').hidden = true; el('#dialogo-remover').showModal(); el('#cancelar-remover').focus();
 }

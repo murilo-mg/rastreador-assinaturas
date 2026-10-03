@@ -77,3 +77,30 @@ func (r *Repositorio) Remover(ctx context.Context, id int) error {
 
 	return nil
 }
+
+// Atualizar substitui os campos editáveis sem mudar o id ou a data de criação.
+func (r *Repositorio) Atualizar(ctx context.Context, a Assinatura) error {
+	return r.alterar(ctx, `UPDATE assinaturas
+		SET nome = $1, valor = $2, categoria = $3, dia_cobranca = $4, ativa = $5
+		WHERE id = $6`, a.Nome, a.Valor, a.Categoria, a.DiaCobranca, a.Ativa, a.ID)
+}
+
+// DefinirAtiva altera somente o estado, preservando os demais campos.
+func (r *Repositorio) DefinirAtiva(ctx context.Context, id int, ativa bool) error {
+	return r.alterar(ctx, `UPDATE assinaturas SET ativa = $1 WHERE id = $2`, ativa, id)
+}
+
+func (r *Repositorio) alterar(ctx context.Context, query string, argumentos ...any) error {
+	resultado, err := r.banco.ExecContext(ctx, query, argumentos...)
+	if err != nil {
+		return fmt.Errorf("erro ao atualizar assinatura: %w", err)
+	}
+	linhas, err := resultado.RowsAffected()
+	if err != nil {
+		return fmt.Errorf("erro ao verificar atualização: %w", err)
+	}
+	if linhas == 0 {
+		return ErrNaoEncontrada
+	}
+	return nil
+}

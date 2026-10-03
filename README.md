@@ -1,6 +1,6 @@
 # Rastreador de Assinaturas
 
-API em Go com um painel para acompanhar assinaturas mensais: cadastrar serviços, consultar os gastos e ver as próximas cobranças. Fiz esse projeto para praticar Go, PostgreSQL e a integração entre uma interface e o backend.
+API em Go com um painel para acompanhar assinaturas mensais: cadastrar e editar serviços, consultar os gastos e ver as próximas cobranças. Fiz esse projeto para praticar Go, PostgreSQL e a integração entre uma interface e o backend.
 
 ![Painel do rastreador com assinaturas fictícias, resumo mensal e próximas cobranças](docs/imagens/painel.png)
 
@@ -9,6 +9,8 @@ As capturas usam quatro serviços fictícios adicionados pelo botão **Experimen
 ## O que dá para fazer
 
 - Cadastrar assinaturas ativas ou inativas, com nome, valor, categoria e dia de cobrança.
+- Editar uma assinatura existente sem precisar apagar e cadastrar novamente.
+- Ativar ou desativar pela lista, preservando os dados do registro.
 - Buscar pelo nome, filtrar por categoria e ordenar por nome, valor ou dia.
 - Ver o gasto mensal, a projeção anual e a quantidade de assinaturas ativas.
 - Consultar as próximas cobranças em períodos de 7, 15 ou 30 dias.
@@ -18,9 +20,11 @@ As capturas usam quatro serviços fictícios adicionados pelo botão **Experimen
 Os filtros mudam a lista. O resumo e a distribuição por categoria continuam considerando **todas as assinaturas ativas**.
 
 <details>
-<summary>Cadastro e versão para celular</summary>
+<summary>Cadastro, edição e versão para celular</summary>
 
 ![Formulário para cadastrar uma assinatura](docs/imagens/cadastro.png)
+
+![Formulário para editar o valor de uma assinatura existente](docs/imagens/edicao.png)
 
 <img src="docs/imagens/mobile.png" width="390" alt="Painel do rastreador em uma tela de celular">
 
@@ -65,7 +69,9 @@ Todos os valores representam **cobranças mensais em reais**.
 - Os vencimentos incluem hoje e a data final do período, em ordem cronológica. Cada assinatura aparece com sua próxima cobrança.
 - O fuso usado no Compose é `America/Manaus`; pode ser alterado na variável `TZ`.
 
-Remover uma assinatura apaga o registro deste aplicativo. **Não cancela o serviço contratado nem uma cobrança real.**
+Desativar mantém o registro salvo e o exclui dos totais, da distribuição por categoria e das próximas cobranças. Reativar volta a incluí-lo, usando o valor e o dia de cobrança atuais.
+
+Remover apaga o registro deste aplicativo. **Desativar ou remover não cancela o serviço contratado nem uma cobrança real.**
 
 ## API
 
@@ -74,6 +80,8 @@ Remover uma assinatura apaga o registro deste aplicativo. **Não cancela o servi
 | GET | `/saude` | Verifica a conexão com o banco |
 | POST | `/assinaturas` | Cadastra uma assinatura |
 | GET | `/assinaturas` | Lista as assinaturas |
+| PUT | `/assinaturas/{id}` | Substitui os campos editáveis de um registro |
+| PATCH | `/assinaturas/{id}` | Altera somente o campo `ativa` |
 | DELETE | `/assinaturas/{id}` | Remove um registro |
 | GET | `/relatorios/gasto-mensal` | Soma os valores ativos |
 | GET | `/relatorios/projecao-anual` | Calcula a projeção anual |
@@ -96,6 +104,26 @@ Resposta, com status `201`:
 Nome, valor e dia de cobrança são obrigatórios. A categoria é opcional. Se `ativa` não for enviada, o cadastro começa ativo; `false` explícito é respeitado.
 
 O nome aceita até 100 caracteres, a categoria até 50 e o valor até duas casas decimais, entre zero e R$ 99.999.999,99. O corpo do cadastro é limitado a 64 KiB; campos desconhecidos são rejeitados.
+
+### Editar ou mudar o estado
+
+Na edição, envie nome, valor, dia de cobrança e **`ativa` explicitamente**. A categoria é opcional; omiti-la limpa a categoria. O `PUT` mantém o ID e a data de criação e não cria um registro se o ID não existir.
+
+~~~bash
+curl -X PUT http://localhost:8080/assinaturas/1 \
+  -H "Content-Type: application/json" \
+  -d '{"nome":"Academia","valor":99.90,"categoria":"Saúde","dia_cobranca":15,"ativa":true}'
+~~~
+
+Para desativar sem alterar os outros campos:
+
+~~~bash
+curl -X PATCH http://localhost:8080/assinaturas/1 \
+  -H "Content-Type: application/json" \
+  -d '{"ativa":false}'
+~~~
+
+Para reativar, envie `{"ativa":true}`. O `PATCH` aceita somente esse campo e exige um booleano; não aceita estado ausente ou `null`. As duas operações retornam `204`, sem corpo, quando concluídas. As mesmas regras de JSON e o limite de 64 KiB do cadastro também se aplicam a elas.
 
 ### Exemplo de relatório
 
@@ -122,7 +150,7 @@ go test ./...
 go vet ./...
 ~~~
 
-A suíte cobre validação, limites do JSON, métodos HTTP, respostas de erro, recursos do painel e cálculo de datas, incluindo meses curtos, anos bissextos e viradas de mês e ano.
+A suíte cobre validação, limites do JSON, métodos HTTP, respostas de erro, recursos do painel e cálculo de datas, incluindo meses curtos, anos bissextos e viradas de mês e ano. A integração verifica edição, preservação de ID e data de criação, ativação/desativação e o reflexo nos relatórios.
 
 Para executar também a integração, use um banco PostgreSQL acessível:
 
@@ -155,4 +183,4 @@ No Compose, API e banco ficam acessíveis somente em `127.0.0.1`. A senha de des
 
 A interface usa recursos locais, exibe os dados como texto e não inclui analytics ou serviços externos. Os registros são persistidos no PostgreSQL.
 
-Os próximos passos são edição e ativação/desativação de registros existentes, exportação e uma demonstração pública com dados fictícios isolados.
+Os próximos passos são exportação e uma demonstração pública com dados fictícios isolados.

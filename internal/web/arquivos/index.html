@@ -54,7 +54,7 @@
       <div class="linha-formulario"><div class="campo"><label for="valor">Valor mensal (R$)</label><input id="valor" name="valor" required type="number" min="0" max="99999999.99" step="0.01" inputmode="decimal" placeholder="0,00"></div><div class="campo"><label for="dia-cobranca">Dia da cobrança</label><input id="dia-cobranca" name="dia_cobranca" required type="number" min="1" max="31" step="1" placeholder="1 a 31"></div></div>
       <div class="campo"><label for="categoria">Categoria <span class="opcional">(opcional)</span></label><input id="categoria" name="categoria" maxlength="50" list="sugestoes-categorias" placeholder="Ex.: Saúde"><datalist id="sugestoes-categorias"><option value="Streaming"><option value="Saúde"><option value="Educação"><option value="Trabalho"><option value="Outros"></datalist></div>
       <label class="checkbox"><input id="ativa" type="checkbox" checked> Assinatura ativa</label>
-      <p class="ajuda">Nos meses sem o dia escolhido, a cobrança fica no último dia do mês.</p>
+      <p class="ajuda">Nos meses sem o dia escolhido, a cobrança fica no último dia do mês. Assinaturas inativas continuam salvas, fora dos cálculos e das próximas cobranças. Isso não cancela o serviço contratado.</p>
       <p id="erro-cadastro" class="erro-formulario" role="alert" hidden></p>
       <div class="acoes-formulario"><button class="botao discreto" type="button" id="cancelar-cadastro">Cancelar</button><button class="botao primario" type="submit" id="salvar">Salvar assinatura</button></div>
     </form>
