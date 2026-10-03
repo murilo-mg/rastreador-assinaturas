@@ -1,21 +1,22 @@
-// Expõe os endpoints HTTP de relatórios sobre assinaturas.
+// Expõe os endpoints HTTP de relatórios.
 package relatorio
 
 import (
-	"encoding/json"
+	"context"
 	"net/http"
+	"rastreador-assinaturas/internal/httpjson"
 	"strconv"
 )
 
-const diasPadraoAntecedencia = 7
-
-type Handler struct {
-	repositorio *Repositorio
+type Consultas interface {
+	GastoMensalTotal(context.Context) (GastoMensal, error)
+	ProjecaoAnual(context.Context) (ProjecaoAnual, error)
+	ProximosVencimentos(context.Context, int) ([]ProximoVencimento, error)
 }
 
-func NovoHandler(repositorio *Repositorio) *Handler {
-	return &Handler{repositorio: repositorio}
-}
+type Handler struct{ repositorio Consultas }
+
+func NovoHandler(repositorio Consultas) *Handler { return &Handler{repositorio: repositorio} }
 
 func (h *Handler) RegistrarRotas(mux *http.ServeMux) {
 	mux.HandleFunc("/relatorios/gasto-mensal", h.gastoMensal)
@@ -23,66 +24,59 @@ func (h *Handler) RegistrarRotas(mux *http.ServeMux) {
 	mux.HandleFunc("/relatorios/projecao-anual", h.projecaoAnual)
 }
 
+func somenteGet(w http.ResponseWriter, r *http.Request) bool {
+	if r.Method == http.MethodGet {
+		return true
+	}
+	w.Header().Set("Allow", "GET")
+	httpjson.Erro(w, http.StatusMethodNotAllowed, "Método não permitido.")
+	return false
+}
+
 func (h *Handler) gastoMensal(w http.ResponseWriter, r *http.Request) {
-	if r.Method != http.MethodGet {
-		http.Error(w, "método não permitido", http.StatusMethodNotAllowed)
+	if !somenteGet(w, r) {
 		return
 	}
-
-	gasto, err := h.repositorio.GastoMensalTotal()
+	gasto, err := h.repositorio.GastoMensalTotal(r.Context())
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		httpjson.Interno(w, err)
 		return
 	}
-
-	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(gasto)
+	httpjson.Responder(w, http.StatusOK, gasto)
 }
 
 func (h *Handler) projecaoAnual(w http.ResponseWriter, r *http.Request) {
-	if r.Method != http.MethodGet {
-		http.Error(w, "método não permitido", http.StatusMethodNotAllowed)
+	if !somenteGet(w, r) {
 		return
 	}
-
-	projecao, err := h.repositorio.ProjecaoAnual()
+	projecao, err := h.repositorio.ProjecaoAnual(r.Context())
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		httpjson.Interno(w, err)
 		return
 	}
-
-	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(projecao)
+	httpjson.Responder(w, http.StatusOK, projecao)
 }
 
 func (h *Handler) proximosVencimentos(w http.ResponseWriter, r *http.Request) {
-	if r.Method != http.MethodGet {
-		http.Error(w, "método não permitido", http.StatusMethodNotAllowed)
+	if !somenteGet(w, r) {
 		return
 	}
-
-	dias := lerParametroDias(r)
-
-	vencimentos, err := h.repositorio.ProximosVencimentos(dias)
+	dias := 7
+	if r.URL.Query().Has("dias") {
+		var err error
+		dias, err = strconv.Atoi(r.URL.Query().Get("dias"))
+		if err != nil || dias < 1 || dias > 365 {
+			httpjson.Erro(w, http.StatusBadRequest, "Informe dias entre 1 e 365.")
+			return
+		}
+	}
+	vencimentos, err := h.repositorio.ProximosVencimentos(r.Context(), dias)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		httpjson.Interno(w, err)
 		return
 	}
-
-	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(vencimentos)
-}
-
-func lerParametroDias(r *http.Request) int {
-	valor := r.URL.Query().Get("dias")
-	if valor == "" {
-		return diasPadraoAntecedencia
+	if vencimentos == nil {
+		vencimentos = []ProximoVencimento{}
 	}
-
-	dias, err := strconv.Atoi(valor)
-	if err != nil || dias <= 0 {
-		return diasPadraoAntecedencia
-	}
-
-	return dias
+	httpjson.Responder(w, http.StatusOK, vencimentos)
 }
