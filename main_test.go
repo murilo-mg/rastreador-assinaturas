@@ -9,8 +9,11 @@ import (
 	"os"
 	"strings"
 	"testing"
+	"time"
 
 	_ "github.com/lib/pq"
+
+	"rastreador-assinaturas/internal/assinatura"
 )
 
 func TestPainelERecursos(t *testing.T) {
@@ -113,6 +116,93 @@ func TestAPIComBanco(t *testing.T) {
 	}
 	if w.Code != 200 || anual.GastoAnual != 39.6 {
 		t.Fatalf("projeção incorreta: %+v", anual)
+	}
+	// Editar preserva identidade/data de criação e atualiza todos os campos editáveis.
+	var criada time.Time
+	if err := banco.QueryRow("SELECT criado_em FROM assinaturas WHERE id=1").Scan(&criada); err != nil {
+		t.Fatal(err)
+	}
+	if w := enviar("PUT", "/assinaturas/1", `{"nome":"Editada","valor":4.40,"categoria":"Teste","dia_cobranca":31,"ativa":false}`); w.Code != 204 {
+		t.Fatalf("edição: %d %s", w.Code, w.Body.String())
+	}
+	var depois time.Time
+	if err := banco.QueryRow("SELECT criado_em FROM assinaturas WHERE id=1").Scan(&depois); err != nil || !depois.Equal(criada) {
+		t.Fatal("edição mudou a data de criação")
+	}
+	listar := func() []assinatura.Assinatura {
+		t.Helper()
+		w := enviar("GET", "/assinaturas", "")
+		var lista []assinatura.Assinatura
+		if w.Code != 200 || json.Unmarshal(w.Body.Bytes(), &lista) != nil {
+			t.Fatal("listagem inválida")
+		}
+		return lista
+	}
+	lista := listar()
+	if len(lista) != 3 || lista[0].ID != 1 || lista[0].Nome != "Editada" || lista[0].Valor != 4.4 || lista[0].Categoria != "Teste" || lista[0].DiaCobranca != 31 || lista[0].Ativa {
+		t.Fatalf("edição não persistida: %+v", lista)
+	}
+	for _, tt := range []struct {
+		ativa        string
+		total, anual float64
+	}{
+		{"false", 2.2, 26.4}, {"true", 6.6, 79.2}, {"true", 6.6, 79.2}, {"false", 2.2, 26.4},
+	} {
+		if w := enviar("PATCH", "/assinaturas/1", `{"ativa":`+tt.ativa+`}`); w.Code != 204 {
+			t.Fatalf("estado: %d %s", w.Code, w.Body.String())
+		}
+		w := enviar("GET", "/relatorios/gasto-mensal", "")
+		if json.Unmarshal(w.Body.Bytes(), &mensal) != nil || mensal.Total != tt.total {
+			t.Fatalf("total após estado: %+v", mensal)
+		}
+		w = enviar("GET", "/relatorios/projecao-anual", "")
+		if json.Unmarshal(w.Body.Bytes(), &anual) != nil || anual.GastoAnual != tt.anual {
+			t.Fatalf("anual após estado: %+v", anual)
+		}
+		w = enviar("GET", "/relatorios/proximos-vencimentos?dias=365", "")
+		var vencimentos []struct {
+			ID          int
+			Nome        string
+			Valor       float64
+			DiaCobranca int
+		}
+		if json.Unmarshal(w.Body.Bytes(), &vencimentos) != nil {
+			t.Fatal("vencimentos inválidos")
+		}
+		achou := false
+		for _, v := range vencimentos {
+			if v.ID == 1 {
+				achou = true
+				if v.Nome != "Editada" || v.Valor != 4.4 || v.DiaCobranca != 31 {
+					t.Fatal("vencimento não atualizado")
+				}
+			}
+			if v.ID == 3 {
+				t.Fatal("inativa nos vencimentos")
+			}
+		}
+		if achou != (tt.ativa == "true") {
+			t.Fatal("estado não refletido nos vencimentos")
+		}
+		a := listar()[0]
+		if a.Nome != "Editada" || a.Valor != 4.4 || a.Categoria != "Teste" || a.DiaCobranca != 31 || a.Ativa != (tt.ativa == "true") {
+			t.Fatal("PATCH alterou outros campos")
+		}
+	}
+	for _, metodo := range []string{"PUT", "PATCH"} {
+		corpo := `{"ativa":true}`
+		if metodo == "PUT" {
+			corpo = `{"nome":"Ausente","valor":1,"dia_cobranca":1,"ativa":true}`
+		}
+		if w := enviar(metodo, "/assinaturas/999", corpo); w.Code != 404 {
+			t.Fatal("alteração de inexistente deveria retornar 404")
+		}
+	}
+	if w := enviar("PUT", "/assinaturas/1", `{"nome":"Inválida","valor":-1,"dia_cobranca":1,"ativa":true}`); w.Code != 400 {
+		t.Fatal("edição inválida aceita")
+	}
+	if listar()[0].Nome != "Editada" {
+		t.Fatal("edição inválida mudou o banco")
 	}
 	if w := enviar("DELETE", "/assinaturas/1", ""); w.Code != 204 {
 		t.Fatalf("remoção: %s", w.Body.String())
