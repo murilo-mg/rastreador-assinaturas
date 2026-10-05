@@ -31,6 +31,23 @@ Os filtros mudam a lista. O resumo e a distribuição por categoria continuam co
 
 </details>
 
+## Demonstração interativa
+
+O projeto também inclui uma demonstração estática pronta para hospedagem gratuita. Ela reaproveita o painel e permite cadastrar, editar, ativar/desativar, remover e exportar exemplos fictícios.
+
+Cada aba tem seus próprios dados, somente em memória. **Recarregar a página ou clicar em Restaurar exemplos apaga as alterações.** Use apenas dados de teste. As assinaturas da demonstração não são enviadas à API nem ao PostgreSQL.
+
+Para experimentar, com Node.js 24:
+
+~~~bash
+node scripts/gerar-demo.mjs
+node scripts/servir-demo.mjs
+~~~
+
+Abra [http://localhost:4173](http://localhost:4173). A aplicação Go continua usando a API e o banco, pelo fluxo Docker abaixo.
+
+O guia em [docs/DEMONSTRACAO.md](docs/DEMONSTRACAO.md) descreve a publicação no Cloudflare Pages e as diferenças entre os dois modos. O endereço público será registrado após a publicação.
+
 ## Como rodar
 
 Requisito: Docker com Docker Compose.
@@ -182,6 +199,13 @@ Os testes de integração usam tabelas temporárias e não alteram as assinatura
 
 O GitHub Actions executa formatação, `go vet`, testes com detector de condições de corrida, integração com PostgreSQL 16 e build do Docker. O escopo da conferência local está em [docs/VALIDACAO.md](docs/VALIDACAO.md).
 
+Os testes e a geração da demonstração também são executados no CI. Para rodá-los localmente:
+
+~~~bash
+node --test testes/*.test.mjs
+node scripts/gerar-demo.mjs
+~~~
+
 ## Organização
 
 | Área | Arquivos |
@@ -194,6 +218,9 @@ O GitHub Actions executa formatação, `go vet`, testes com detector de condiç�
 | Painel incorporado ao binário | `internal/web/` |
 | Schema do PostgreSQL | `db/schema.sql` |
 | Capturas e validação | `docs/` |
+| Demonstração em memória | `internal/web/arquivos/demo.mjs` |
+| Geração e prévia do site estático | `scripts/` |
+| Testes da demonstração | `testes/` |
 
 ## Escopo atual
 
@@ -203,4 +230,4 @@ No Compose, API e banco ficam acessíveis somente em `127.0.0.1`. A senha de des
 
 A interface usa recursos locais, exibe os dados como texto e não inclui analytics ou serviços externos. Os registros são persistidos no PostgreSQL.
 
-O próximo passo é uma demonstração pública com dados fictícios isolados.
+A demonstração pública está preparada como site estático, com exemplos isolados em cada aba. Ela não hospeda o backend Go nem persiste registros; a publicação do aplicativo completo com contas de usuário exige uma etapa própria.

@@ -25,6 +25,7 @@ func TestPainelERecursos(t *testing.T) {
 	}{
 		{"/", "Rastreador de Assinaturas", 200},
 		{"/assets/app.js", "textContent", 200},
+		{"/assets/demo.mjs", "criarDemonstracao", 200},
 		{"/assets/app.css", ":root", 200},
 		{"/assets/favicon.svg", "<svg", 200},
 		{"/README.md", "", 404}, {"/main.go", "", 404}, {"/assets/", "", 404},
