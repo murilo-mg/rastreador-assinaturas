@@ -44,9 +44,7 @@ próprio de controle de acesso, isolamento, transporte e operação do banco.
   exemplos; abas diferentes não compartilham os registros.
 - O painel não envia assinaturas à API nem usa cookies, `localStorage` ou
   `sessionStorage` para guardá-las. Use apenas dados fictícios.
-- Os cabeçalhos gerados incluem CSP com `connect-src 'none'`, proteção contra
-  enquadramento e `nosniff`. É preciso conferir sua aplicação na hospedagem
-  real após o deploy, conforme [DEMONSTRACAO.md](DEMONSTRACAO.md).
+- A demonstração publicada em [rastreador-assinaturas.pages.dev](https://rastreador-assinaturas.pages.dev/) teve seus cabeçalhos conferidos em 5 de outubro de 2026. A resposta incluiu CSP com `connect-src 'none'`, proteção contra enquadramento, `nosniff`, política de referência e política de permissões, conforme [DEMONSTRACAO.md](DEMONSTRACAO.md).
 
 Não existe autenticação nesse site de exemplos, porque ele não hospeda a API
 nem compartilha um banco com registros dos visitantes.

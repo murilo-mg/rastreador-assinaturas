@@ -46,7 +46,7 @@ node scripts/servir-demo.mjs
 
 Abra [http://localhost:4173](http://localhost:4173). A aplicação Go continua usando a API e o banco, pelo fluxo Docker abaixo.
 
-O guia em [docs/DEMONSTRACAO.md](docs/DEMONSTRACAO.md) descreve a publicação no Cloudflare Pages e as diferenças entre os dois modos. O endereço público será registrado após a publicação.
+A demonstração está publicada em [rastreador-assinaturas.pages.dev](https://rastreador-assinaturas.pages.dev/). O guia em [docs/DEMONSTRACAO.md](docs/DEMONSTRACAO.md) descreve a configuração do Cloudflare Pages e as diferenças entre os dois modos.
 
 ## Como rodar
 
@@ -241,6 +241,6 @@ O servidor aceita somente os hosts `localhost`, `127.0.0.1` e `[::1]`, com porta
 
 A interface usa recursos locais, exibe os dados como texto e não inclui analytics ou serviços externos. Os registros são persistidos no PostgreSQL.
 
-A demonstração pública está preparada como site estático, com exemplos isolados em cada aba. Ela não hospeda o backend Go nem persiste registros; a publicação do aplicativo completo com contas de usuário exige uma etapa própria.
+A demonstração pública está publicada em [rastreador-assinaturas.pages.dev](https://rastreador-assinaturas.pages.dev/) como site estático, com exemplos isolados em cada aba. Ela não hospeda o backend Go nem persiste registros; publicar o aplicativo completo com contas de usuário exige uma etapa própria.
 
 As proteções e os limites estão descritos em [docs/SEGURANCA.md](docs/SEGURANCA.md). Nenhum resultado de teste ou scanner representa garantia de segurança total.
