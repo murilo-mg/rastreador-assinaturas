@@ -2,7 +2,7 @@
 
 ## Revisão de segurança de 5 de outubro de 2026
 
-Preparada sobre a `main` em `f464614`, após o merge da demonstração interativa.
+A revisão local começou sobre a `main` em `f464614`. As correções de segurança foram integradas à `main` em `36c2c74`.
 
 - Um teste de regressão reproduziu a aceitação de um domínio externo em
   `Host`, mesmo com `Origin` igual, em todos os métodos testados. Ele falhou
@@ -22,15 +22,11 @@ Preparada sobre a `main` em `f464614`, após o merge da demonstração interativ
 - `govulncheck` 1.8.0 não encontrou vulnerabilidades conhecidas no código
   analisado com Go 1.27.1 na data da revisão. Esse resultado pode mudar
   conforme novas vulnerabilidades forem publicadas.
-- O workflow foi atualizado para executar esse scanner em pushes, PRs,
-  acionamento manual e semanalmente. A execução remota dessa alteração
-  precisa passar no novo PR.
+- O workflow executa esse scanner em pushes, PRs, acionamento manual e
+  semanalmente. A configuração foi integrada à `main`; os checks `testes` e
+  `seguranca` passaram na revisão de segurança.
 
-O [run 37260552661](https://github.com/murilo-mg/rastreador-assinaturas/actions/runs/37260552661)
-da base `f464614` passou, incluindo PostgreSQL 16 nativo e build Docker.
-Docker não está disponível neste ambiente de revisão. O deploy público e seus
-cabeçalhos ainda precisam ser conferidos na hospedagem real. A aplicação Go
-continua sem autenticação, destinada a uso local. Veja [SEGURANCA.md](SEGURANCA.md).
+Os checks `testes` e `seguranca` da correção integrada em `36c2c74` passaram no [run 37261801997](https://github.com/murilo-mg/rastreador-assinaturas/actions/runs/37261801997). A demonstração pública em [rastreador-assinaturas.pages.dev](https://rastreador-assinaturas.pages.dev/) abriu com o aviso, os quatro exemplos e os indicadores. Em 5 de outubro de 2026, a resposta HTTP também confirmou status 200 e os cabeçalhos descritos em [DEMONSTRACAO.md](DEMONSTRACAO.md). A aplicação Go continua sem autenticação e é destinada a uso local. Veja [SEGURANCA.md](SEGURANCA.md).
 
 ## Revisão do painel e da demonstração
 
@@ -108,19 +104,14 @@ e as ações na lista. Login não faz parte desta versão.
 
 ## Limite da revisão
 
-Não foi possível executar Docker neste ambiente. O workflow prepara PostgreSQL
-16 nativo e verifica o build da imagem no GitHub Actions. A versão anterior
-(`076a794`) passou nessas etapas no [run 37158183885](https://github.com/murilo-mg/rastreador-assinaturas/actions/runs/37158183885).
-O resultado das alterações desta revisão deve ser conferido no novo PR antes do merge.
+O ambiente de revisão não tinha Docker instalado; o workflow do GitHub Actions executou a integração com PostgreSQL 16 e a compilação da imagem Docker. A revisão integrada em `36c2c74` passou nos checks remotos; veja o [run 37261801997](https://github.com/murilo-mg/rastreador-assinaturas/actions/runs/37261801997).
 
 O conteúdo e o download do CSV foram conferidos; Excel e LibreOffice não
 foram executados neste ambiente. O formato UTF-8/BOM segue a documentação
 da Microsoft e o tratamento de fórmulas segue a OWASP, com as referências
 e o escopo descritos no README.
 
-A demonstração foi validada em servidor estático local com os cabeçalhos
-previstos para publicação. O deploy no Cloudflare Pages e o endereço público
-ainda precisam ser conferidos após a publicação; não foram simulados como concluídos.
+A demonstração foi aberta no Cloudflare Pages em 5 de outubro de 2026. A página carregou o aviso e os quatro exemplos; a resposta HTTP retornou status 200 e os cabeçalhos de segurança esperados.
 
 O detector de condições de corrida e os testes verificam comportamentos
 específicos. Esta revisão não equivale a uma auditoria completa de segurança.

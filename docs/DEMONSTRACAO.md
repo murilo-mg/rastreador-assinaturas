@@ -38,7 +38,7 @@ O HTML usado pela aplicação Go não recebe a marca de demonstração nem dados
 
 ## Publicar no Cloudflare Pages
 
-Preparação: integrar esta mudança na `main` e aguardar o CI aprovado.
+A demonstração está publicada em [rastreador-assinaturas.pages.dev](https://rastreador-assinaturas.pages.dev/). A tabela abaixo registra a configuração usada no projeto.
 
 No painel do Cloudflare, crie um projeto **Pages** conectado ao repositório `murilo-mg/rastreador-assinaturas`. Escolha um nome disponível e use:
 
@@ -55,9 +55,9 @@ No painel do Cloudflare, crie um projeto **Pages** conectado ao repositório `mu
 
 Não são necessárias variáveis `DB_*`, senhas ou tokens na demonstração. A saída é inteiramente estática e não inclui Functions. A documentação do Cloudflare informa que requisições a arquivos estáticos são gratuitas e ilimitadas; o plano Free tem limites de builds e outros recursos.
 
-O Cloudflare exibirá o endereço `pages.dev` disponível após o primeiro deploy. Só então registre esse endereço no README e no campo Website do repositório. Este guia não pressupõe que a publicação já tenha ocorrido.
+O endereço publicado é [rastreador-assinaturas.pages.dev](https://rastreador-assinaturas.pages.dev/). Em 5 de outubro de 2026, a página abriu e carregou o aviso de demonstração, os quatro exemplos fictícios e os indicadores do painel.
 
-Os cabeçalhos em `public/_headers` incluem CSP, proteção contra incorporação em frames, `nosniff` e política de referência. O modo estático usa `connect-src 'none'`, pois não faz chamadas à API. Depois de publicar, confira o aviso de demonstração, cadastro, edição, CSV e restauração no endereço real.
+Os cabeçalhos gerados em `public/_headers` foram conferidos na resposta HTTP do Cloudflare Pages em 5 de outubro de 2026. A resposta foi `HTTP/2 200` e incluiu CSP com `connect-src 'none'` e `frame-ancestors 'none'`, `X-Content-Type-Options: nosniff`, `X-Frame-Options: DENY`, `Referrer-Policy: no-referrer`, `Permissions-Policy` bloqueando câmera, microfone e geolocalização, e `Cache-Control: no-store`. O site é estático e não chama a API.
 
 Referências oficiais consultadas em 4 de outubro de 2026:
 
