@@ -15,6 +15,7 @@ func RegistrarRotas(mux *http.ServeMux) {
 	for rota, nome := range map[string]string{
 		"/{$}": "index.html", "/assets/app.css": "app.css",
 		"/assets/app.js": "app.js", "/assets/favicon.svg": "favicon.svg",
+		"/assets/demo.mjs": "demo.mjs",
 	} {
 		conteudo, err := arquivos.ReadFile("arquivos/" + nome)
 		if err != nil {

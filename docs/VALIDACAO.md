@@ -1,6 +1,6 @@
 # Validação do painel e da API
 
-Revisão de 3 de outubro de 2026, preparada sobre a `main` em `1999cca`, incluindo exportação em CSV.
+Revisão de 4 de outubro de 2026, preparada sobre a `main` em `076a794`, incluindo demonstração estática.
 
 ## Código e testes
 
@@ -27,6 +27,9 @@ Revisão de 3 de outubro de 2026, preparada sobre a `main` em `1999cca`, incluin
 - JSON inválido, campos obrigatórios, campos desconhecidos, corpo acima de
   64 KiB, tipos de conteúdo, métodos e registros inexistentes cobertos.
 - Build estático com `CGO_ENABLED=0`, usado na verificação do navegador.
+- Node.js 24: exemplos, cálculos em centavos, CRUD, estado ativo, validação,
+  calendário, CSV, isolamento entre instâncias e geração dos arquivos públicos.
+- A geração copia somente os recursos permitidos e não altera o HTML da aplicação Go.
 
 ## Interface
 
@@ -53,6 +56,19 @@ Verificada em Chromium 154, com a aplicação Go e o banco de revisão:
 - Exportação de inativas e nomes com prefixo de fórmula, download no celular,
   falha de conexão sem baixar um arquivo de erro e nova tentativa bem-sucedida.
 
+Na demonstração estática, também foram conferidos:
+
+- Quatro exemplos iniciais, aviso de dados fictícios e botão de restauração.
+- Cadastro, validação e recuperação, edição, remoção/cancelamento, estado
+  ativo, totais, categorias, vencimentos e CSV com o valor editado e inativas.
+- Isolamento entre abas do mesmo navegador e entre contextos independentes.
+- Restauração dos exemplos ao recarregar e pelo botão, com filtros reiniciados.
+- Ausência de chamadas de rede à API, de recursos externos e de armazenamento
+  das assinaturas em cookies, `localStorage` ou `sessionStorage`.
+- Nome com aparência de HTML como texto, tela de 390 px sem transbordamento,
+  fechamento por Escape e ausência de erros de JavaScript ou de CSP.
+- Prévia responde 404 para código Go, README, arquivos privados e URLs de API.
+
 As capturas de `imagens/` usam dados fictícios. Incluem o formulário de edição
 e as ações na lista. Login não faz parte desta versão.
 
@@ -60,13 +76,17 @@ e as ações na lista. Login não faz parte desta versão.
 
 Não foi possível executar Docker neste ambiente. O workflow prepara PostgreSQL
 16 nativo e verifica o build da imagem no GitHub Actions. A versão anterior
-(`1999cca`) passou nessas etapas no [run 37157419204](https://github.com/murilo-mg/rastreador-assinaturas/actions/runs/37157419204).
+(`076a794`) passou nessas etapas no [run 37158183885](https://github.com/murilo-mg/rastreador-assinaturas/actions/runs/37158183885).
 O resultado das alterações desta revisão deve ser conferido no novo PR antes do merge.
 
 O conteúdo e o download do CSV foram conferidos; Excel e LibreOffice não
 foram executados neste ambiente. O formato UTF-8/BOM segue a documentação
 da Microsoft e o tratamento de fórmulas segue a OWASP, com as referências
 e o escopo descritos no README.
+
+A demonstração foi validada em servidor estático local com os cabeçalhos
+previstos para publicação. O deploy no Cloudflare Pages e o endereço público
+ainda precisam ser conferidos após a publicação; não foram simulados como concluídos.
 
 O detector de condições de corrida e os testes verificam comportamentos
 específicos. Esta revisão não equivale a uma auditoria completa de segurança.

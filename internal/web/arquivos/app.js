@@ -1,5 +1,8 @@
 'use strict';
 
+const demonstracao = document.body.dataset.modo === 'demonstracao'
+  ? (await import('/assets/demo.mjs')).criarDemonstracao() : null;
+
 const el = seletor => document.querySelector(seletor);
 const reais = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' });
 const comparador = new Intl.Collator('pt-BR', { sensitivity: 'base', numeric: true });
@@ -29,7 +32,9 @@ function mensagem(texto, erro = false) {
 async function receberResposta(caminho, opcoes = {}, sinal) {
   let resposta;
   try {
-    resposta = await fetch(caminho, { ...opcoes, signal: sinal ?? AbortSignal.timeout(10000) });
+    if (sinal?.aborted) throw new DOMException('Atualização cancelada.', 'AbortError');
+    resposta = demonstracao ? demonstracao.responder(caminho, opcoes)
+      : await fetch(caminho, { ...opcoes, signal: sinal ?? AbortSignal.timeout(10000) });
   } catch (erro) {
     if (sinal?.aborted) throw erro;
     throw new Error('Não consegui acessar o servidor. Confira se a aplicação está rodando e tente novamente.');
@@ -310,6 +315,14 @@ el('#cancelar-remover').addEventListener('click', () => el('#dialogo-remover').c
 el('#dialogo-remover').addEventListener('cancel', evento => { if (removendo) evento.preventDefault(); });
 el('#atualizar').addEventListener('click', () => { mensagem(''); atualizar(); });
 el('#exportar-csv').addEventListener('click', exportarCSV);
+if (demonstracao) {
+  el('#restaurar-exemplos').addEventListener('click', async () => {
+    if (cadastroOcupado || removendo || alterandoEstado) return;
+    demonstracao.restaurar();
+    el('#busca').value = ''; el('#categoria-filtro').value = ''; el('#ordem').value = 'nome';
+    mensagem('Exemplos restaurados.'); await atualizar();
+  });
+}
 el('#dias').addEventListener('change', () => { mensagem(''); atualizar(); });
 el('#busca').addEventListener('input', renderizarLista);
 for (const id of ['#categoria-filtro', '#ordem']) el(id).addEventListener('change', renderizarLista);
