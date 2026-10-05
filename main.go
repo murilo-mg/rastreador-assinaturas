@@ -8,6 +8,8 @@ import (
 	"net/http"
 	"net/url"
 	"os"
+	"strconv"
+	"strings"
 	"time"
 	_ "time/tzdata"
 
@@ -42,20 +44,44 @@ func proteger(proximo http.Handler) http.Handler {
 		w.Header().Set("Referrer-Policy", "no-referrer")
 		w.Header().Set("Permissions-Policy", "camera=(), microphone=(), geolocation=()")
 		w.Header().Set("Cache-Control", "no-store")
-		// Rejeita escritas de outras páginas; clientes locais como curl não enviam Origin.
-		if r.Method != http.MethodGet && r.Method != http.MethodHead {
-			if origem := r.Header.Get("Origin"); origem != "" {
-				u, err := url.Parse(origem)
-				if err != nil || u.Host != r.Host || (u.Scheme != "http" && u.Scheme != "https") {
-					httpjson.Erro(w, http.StatusForbidden, "Origem não permitida.")
-					return
-				}
+		// Não resolve DNS: um domínio externo pode apontar para o loopback.
+		if !hostLocal(r.Host) {
+			httpjson.Erro(w, http.StatusForbidden, "Host não permitido. Use localhost, 127.0.0.1 ou [::1].")
+			return
+		}
+		// Verifica também leituras; clientes locais como curl não enviam Origin.
+		if origem := r.Header.Get("Origin"); origem != "" {
+			u, err := url.Parse(origem)
+			if err != nil || u.Host != r.Host || (u.Scheme != "http" && u.Scheme != "https") || u.User != nil || u.Path != "" || u.RawQuery != "" || u.ForceQuery || u.Fragment != "" {
+				httpjson.Erro(w, http.StatusForbidden, "Origem não permitida.")
+				return
 			}
 		}
 		ctx, cancelar := context.WithTimeout(r.Context(), 5*time.Second)
 		defer cancelar()
 		proximo.ServeHTTP(w, r.WithContext(ctx))
 	})
+}
+
+func hostLocal(autoridade string) bool {
+	u, err := url.Parse("//" + autoridade)
+	if err != nil || u.Host != autoridade || u.User != nil || u.Path != "" || u.RawQuery != "" || u.ForceQuery || u.Fragment != "" {
+		return false
+	}
+	if porta := u.Port(); porta != "" {
+		numero, err := strconv.Atoi(porta)
+		if err != nil || numero < 1 || numero > 65535 {
+			return false
+		}
+	} else if strings.HasSuffix(autoridade, ":") {
+		return false
+	}
+	switch strings.ToLower(u.Hostname()) {
+	case "localhost", "127.0.0.1", "::1":
+		return true
+	default:
+		return false
+	}
 }
 
 func main() {

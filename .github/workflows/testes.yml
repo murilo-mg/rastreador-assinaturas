@@ -3,12 +3,16 @@ name: Testes
 on:
   push:
   pull_request:
+  workflow_dispatch:
+  schedule:
+    - cron: '0 12 * * 1'
 
 permissions:
   contents: read
 
 jobs:
   testes:
+    if: github.event_name != 'schedule'
     runs-on: ubuntu-latest
     timeout-minutes: 10
     services:
@@ -46,3 +50,16 @@ jobs:
         run: |
           node --test testes/*.test.mjs
           node scripts/gerar-demo.mjs
+
+  seguranca:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: actions/setup-go@d35c59abb061a4a6fb18e82ac0862c26744d6ab5 # v5
+        with:
+          go-version-file: go.mod
+      - name: Verificar vulnerabilidades conhecidas
+        run: |
+          go install golang.org/x/vuln/cmd/govulncheck@v1.8.0
+          govulncheck ./...

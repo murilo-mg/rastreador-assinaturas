@@ -197,7 +197,16 @@ TEST_DATABASE_URL='postgres://postgres:postgres@localhost:5432/rastreador_assina
 
 Os testes de integração usam tabelas temporárias e não alteram as assinaturas existentes. Sem `TEST_DATABASE_URL`, esses testes são indicados como ignorados; os demais continuam sendo executados.
 
-O GitHub Actions executa formatação, `go vet`, testes com detector de condições de corrida, integração com PostgreSQL 16 e build do Docker. O escopo da conferência local está em [docs/VALIDACAO.md](docs/VALIDACAO.md).
+O GitHub Actions executa formatação, `go vet`, testes com detector de condições de corrida, integração com PostgreSQL 16 e build do Docker. O job `seguranca` usa `govulncheck` para procurar vulnerabilidades conhecidas no código Go em pushes, PRs e semanalmente. O escopo da conferência local está em [docs/VALIDACAO.md](docs/VALIDACAO.md).
+
+Para executar a mesma verificação de vulnerabilidades localmente:
+
+~~~bash
+go install golang.org/x/vuln/cmd/govulncheck@v1.8.0
+govulncheck ./...
+~~~
+
+O diretório de instalação dos comandos Go precisa estar no `PATH`.
 
 Os testes e a geração da demonstração também são executados no CI. Para rodá-los localmente:
 
@@ -228,6 +237,10 @@ Esta versão é para **uso local e pessoal**. Não possui login nem separação 
 
 No Compose, API e banco ficam acessíveis somente em `127.0.0.1`. A senha de desenvolvimento é `postgres`. Uma publicação na internet exige um ciclo próprio de autenticação, isolamento de dados e configuração da hospedagem.
 
+O servidor aceita somente os hosts `localhost`, `127.0.0.1` e `[::1]`, com porta opcional válida, e rejeita origens diferentes quando o navegador envia `Origin`, inclusive em leituras. Isso adiciona proteção contra DNS rebinding; não substitui autenticação. Domínios personalizados, acesso pela rede e proxies não fazem parte dessa configuração local.
+
 A interface usa recursos locais, exibe os dados como texto e não inclui analytics ou serviços externos. Os registros são persistidos no PostgreSQL.
 
 A demonstração pública está preparada como site estático, com exemplos isolados em cada aba. Ela não hospeda o backend Go nem persiste registros; a publicação do aplicativo completo com contas de usuário exige uma etapa própria.
+
+As proteções e os limites estão descritos em [docs/SEGURANCA.md](docs/SEGURANCA.md). Nenhum resultado de teste ou scanner representa garantia de segurança total.

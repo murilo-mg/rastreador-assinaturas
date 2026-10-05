@@ -1,5 +1,39 @@
 # Validação do painel e da API
 
+## Revisão de segurança de 5 de outubro de 2026
+
+Preparada sobre a `main` em `f464614`, após o merge da demonstração interativa.
+
+- Um teste de regressão reproduziu a aceitação de um domínio externo em
+  `Host`, mesmo com `Origin` igual, em todos os métodos testados. Ele falhou
+  antes da correção e passou depois dela. A reprodução usa requisições HTTP
+  de teste; não representa um ataque DNS completo executado em um navegador.
+- A proteção agora rejeita hosts fora da lista local antes de chamar os
+  handlers. Cobertura de IPv4/IPv6, portas, domínios parecidos com localhost,
+  entradas malformadas e cabeçalhos de proxy que tentem alterar o host aceito.
+- `Origin` é verificada também em GET/HEAD, além dos métodos de alteração;
+  origens externas, porta diferente e componentes indevidos são rejeitados.
+- Go 1.27.1: formatação, `go vet`, suíte com `-race` e integração pelo
+  protocolo PostgreSQL/PGlite passaram após a mudança.
+- O painel Go foi conferido em Chromium 154: cadastro, edição, estados,
+  relatórios, filtros, remoção, download CSV, celular e recuperação de falha,
+  sem erros de JavaScript ou CSP nos fluxos normais.
+- Os sete grupos de testes Node passaram e o build estático foi gerado.
+- `govulncheck` 1.8.0 não encontrou vulnerabilidades conhecidas no código
+  analisado com Go 1.27.1 na data da revisão. Esse resultado pode mudar
+  conforme novas vulnerabilidades forem publicadas.
+- O workflow foi atualizado para executar esse scanner em pushes, PRs,
+  acionamento manual e semanalmente. A execução remota dessa alteração
+  precisa passar no novo PR.
+
+O [run 37260552661](https://github.com/murilo-mg/rastreador-assinaturas/actions/runs/37260552661)
+da base `f464614` passou, incluindo PostgreSQL 16 nativo e build Docker.
+Docker não está disponível neste ambiente de revisão. O deploy público e seus
+cabeçalhos ainda precisam ser conferidos na hospedagem real. A aplicação Go
+continua sem autenticação, destinada a uso local. Veja [SEGURANCA.md](SEGURANCA.md).
+
+## Revisão do painel e da demonstração
+
 Revisão de 4 de outubro de 2026, preparada sobre a `main` em `076a794`, incluindo demonstração estática.
 
 ## Código e testes

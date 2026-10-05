@@ -32,7 +32,7 @@ func TestPainelERecursos(t *testing.T) {
 	} {
 		t.Run(tt.caminho, func(t *testing.T) {
 			w := httptest.NewRecorder()
-			h.ServeHTTP(w, httptest.NewRequest("GET", tt.caminho, nil))
+			h.ServeHTTP(w, httptest.NewRequest("GET", "http://localhost:8080"+tt.caminho, nil))
 			if w.Code != tt.status || !strings.Contains(w.Body.String(), tt.trecho) {
 				t.Fatalf("recurso %s: %d", tt.caminho, w.Code)
 			}
@@ -43,22 +43,83 @@ func TestPainelERecursos(t *testing.T) {
 	}
 }
 
-func TestOrigemDaEscrita(t *testing.T) {
+func TestOrigem(t *testing.T) {
 	for _, tt := range []struct {
 		origem    string
 		permitida bool
 	}{
 		{"", true}, {"http://localhost:8080", true}, {"http://outro.site", false}, {"null", false},
+		{"http://localhost:8081", false}, {"http://localhost:8080.externo.example", false},
+		{"http://usuario@localhost:8080", false}, {"http://localhost:8080/caminho", false},
+		{"http://localhost:8080?consulta", false}, {"http://localhost:8080?", false},
+		{"http://localhost:8080#fragmento", false}, {"ftp://localhost:8080", false},
 	} {
-		t.Run(tt.origem, func(t *testing.T) {
+		for _, metodo := range []string{"GET", "HEAD", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"} {
+			t.Run(metodo+"/"+tt.origem, func(t *testing.T) {
+				chamado := false
+				h := proteger(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) { chamado = true; w.WriteHeader(204) }))
+				r := httptest.NewRequest(metodo, "http://localhost:8080/assinaturas", nil)
+				r.Header.Set("Origin", tt.origem)
+				w := httptest.NewRecorder()
+				h.ServeHTTP(w, r)
+				if chamado != tt.permitida {
+					t.Fatal("origem não verificada")
+				}
+				if !tt.permitida && w.Code != http.StatusForbidden {
+					t.Fatalf("origem rejeitada sem 403: %d", w.Code)
+				}
+			})
+		}
+	}
+}
+
+func TestHostLocal(t *testing.T) {
+	for _, tt := range []struct {
+		host      string
+		permitido bool
+	}{
+		{"localhost", true}, {"localhost:8080", true}, {"LOCALHOST:4173", true},
+		{"127.0.0.1", true}, {"127.0.0.1:1", true}, {"127.0.0.1:65535", true},
+		{"[::1]", true}, {"[::1]:8080", true},
+		{"", false}, {"externo.example:8080", false}, {"localhost.externo.example:8080", false},
+		{"127.0.0.1.externo.example:8080", false}, {"0.0.0.0:8080", false}, {"192.168.1.10:8080", false},
+		{"[::]:8080", false}, {"localhost:", false}, {"localhost:0", false}, {"localhost:65536", false},
+		{"localhost:abc", false}, {"localhost:-1", false}, {"localhost:8080/caminho", false},
+		{"localhost:8080?consulta", false}, {"localhost:8080#fragmento", false},
+		{"externo@localhost:8080", false}, {"localhost:8080@externo.example", false},
+		{"localhost.:8080", false}, {"localhost:8080 ", false},
+	} {
+		t.Run(tt.host, func(t *testing.T) {
 			chamado := false
 			h := proteger(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) { chamado = true; w.WriteHeader(204) }))
-			r := httptest.NewRequest("POST", "http://localhost:8080/assinaturas", nil)
-			r.Header.Set("Origin", tt.origem)
+			r := httptest.NewRequest("GET", "http://localhost:8080/assinaturas", nil)
+			r.Host = tt.host
+			// Headers de proxy não ampliam os hosts autorizados.
+			r.Header.Set("X-Forwarded-Host", "localhost:8080")
+			r.Header.Set("Forwarded", "host=localhost:8080")
 			w := httptest.NewRecorder()
 			h.ServeHTTP(w, r)
-			if chamado != tt.permitida {
-				t.Fatal("origem não verificada")
+			if chamado != tt.permitido || (!tt.permitido && w.Code != http.StatusForbidden) {
+				t.Fatalf("Host %q: permitido=%v, chamado=%v, status=%d", tt.host, tt.permitido, chamado, w.Code)
+			}
+			if w.Header().Get("X-Content-Type-Options") != "nosniff" || w.Header().Get("Cache-Control") != "no-store" {
+				t.Fatal("resposta perdeu os cabeçalhos de proteção")
+			}
+		})
+	}
+}
+
+func TestBloqueiaDominioExternoMesmoComOrigemIgual(t *testing.T) {
+	for _, metodo := range []string{"GET", "HEAD", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"} {
+		t.Run(metodo, func(t *testing.T) {
+			chamado := false
+			h := proteger(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) { chamado = true }))
+			r := httptest.NewRequest(metodo, "http://dominio-externo.example:8080/assinaturas", nil)
+			r.Header.Set("Origin", "http://dominio-externo.example:8080")
+			w := httptest.NewRecorder()
+			h.ServeHTTP(w, r)
+			if chamado || w.Code != http.StatusForbidden {
+				t.Fatalf("domínio externo chegou ao handler: %d", w.Code)
 			}
 		})
 	}
@@ -88,7 +149,7 @@ func TestAPIComBanco(t *testing.T) {
 	defer banco.ExecContext(ctx, "DROP TABLE IF EXISTS pg_temp.assinaturas")
 	h := criarHandler(banco)
 	enviar := func(metodo, rota, corpo string) *httptest.ResponseRecorder {
-		r := httptest.NewRequest(metodo, rota, strings.NewReader(corpo))
+		r := httptest.NewRequest(metodo, "http://localhost:8080"+rota, strings.NewReader(corpo))
 		r.Header.Set("Content-Type", "application/json")
 		w := httptest.NewRecorder()
 		h.ServeHTTP(w, r)
